@@ -12,7 +12,7 @@
   let intervalo = null;
 
   console.log(
-    "%c🚀 Script Automático V1 carregado!",
+    "%c🚀 Script Automático V1 (Híbrido) carregado!",
     "color: cyan; font-weight: bold",
   );
   console.log("Clique na figurinha para iniciar o processo.");
@@ -56,7 +56,7 @@
         } else {
           console.warn("⚠️ Figurinha não encontrada na contingência.");
         }
-      }, 800); // um pouco mais de tempo pro painel abrir
+      }, 800);
     }
   };
 
@@ -122,6 +122,17 @@
 
   document.addEventListener("click", captureHandler, true);
 
-  // Pra parar a qualquer momento:
-  // Basta digitar no console: running = false
+  window.parar = () => {
+    running = false;
+    if (intervalo) {
+      clearInterval(intervalo);
+      intervalo = null;
+    }
+    console.log(
+      "%c⛔ Script parado pelo usuário!",
+      "color: red; font-weight: bold",
+    );
+  };
+
+  console.log("🎮 Para parar a qualquer momento, digite apenas: parar()");
 })();
