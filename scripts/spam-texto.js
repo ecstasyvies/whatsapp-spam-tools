@@ -1,6 +1,6 @@
 "use strict";
 
-(async () => {
+(() => {
   const CONFIG = {
     mensagens: [
       "Primeira linha do seu roteiro ou texto personalizado",
@@ -23,7 +23,7 @@
 
   let enviadas = 0;
   let running = true;
-  let intervalo = null;
+  let timeoutId = null;
   let totalMensagens = CONFIG.mensagens.length;
 
   console.log(
@@ -32,6 +32,10 @@
   );
   console.log(`📋 Total de mensagens: ${totalMensagens}`);
   console.log("Pra parar a qualquer momento: digite   parar()");
+
+  // Captura o chat alvo na inicialização
+  const header = document.querySelector("#main header");
+  const targetChat = header ? header.innerText.split("\n")[0] : null;
 
   const localizarElementos = () => {
     const chat =
@@ -109,42 +113,64 @@
     throw new Error("Não conseguiu enviar após várias tentativas");
   };
 
-  const iniciarEnvio = () => {
-    intervalo = setInterval(
-      async () => {
-        if (!running || enviadas >= totalMensagens) {
-          clearInterval(intervalo);
-          console.log(
-            "%c✅ Envio concluído com sucesso",
-            "color: lime; font-weight: bold",
-          );
-          console.log(`Total enviado: ${enviadas}/${totalMensagens}`);
-          return;
-        }
+  const startSpam = () => {
+    const sendNext = async () => {
+      if (!running || enviadas >= totalMensagens) {
+        console.log(
+          "%c✅ Envio concluído com sucesso",
+          "color: lime; font-weight: bold",
+        );
+        console.log(`Total enviado: ${enviadas}/${totalMensagens}`);
+        return;
+      }
 
-        const msg = CONFIG.mensagens[enviadas];
+      // Validação de Segurança pra Texto
+      const currentHeader = document.querySelector("#main header");
+      const currentChat = currentHeader
+        ? currentHeader.innerText.split("\n")[0]
+        : null;
 
-        try {
-          await enviarMensagemComRetry(msg);
-          enviadas++;
-          const progresso = Math.round((enviadas / totalMensagens) * 100);
-          console.log(
-            `📤 [${enviadas}/${totalMensagens}] ${progresso}%  ${msg.substring(0, 60)}${msg.length > 60 ? "..." : ""}`,
-          );
-        } catch (e) {
-          console.error(`❌ Erro na mensagem ${enviadas + 1}: ${e.message}`);
-          running = false;
-          clearInterval(intervalo);
-        }
-      },
-      Math.floor(Math.random() * (CONFIG.delayMax - CONFIG.delayMin + 1)) +
-        CONFIG.delayMin,
-    );
+      if (targetChat && currentChat !== targetChat) {
+        window.parar();
+        console.error(
+          "%c🛡️ SEGURANÇA: Você trocou de chat! Script interrompido por segurança.",
+          "color: orange; font-weight: bold; font-size: 14px;",
+        );
+        return;
+      }
+
+      const msg = CONFIG.mensagens[enviadas];
+
+      try {
+        await enviarMensagemComRetry(msg);
+        enviadas++;
+        const progresso = Math.round((enviadas / totalMensagens) * 100);
+        console.log(
+          `📤 [${enviadas}/${totalMensagens}] ${progresso}%  ${msg.substring(0, 60)}${msg.length > 60 ? "..." : ""}`,
+        );
+      } catch (e) {
+        console.error(`❌ Erro na mensagem ${enviadas + 1}: ${e.message}`);
+        running = false;
+        return;
+      }
+
+      // Delay ALEATÓRIO a cada mensagem
+      const delay =
+        Math.floor(Math.random() * (CONFIG.delayMax - CONFIG.delayMin + 1)) +
+        CONFIG.delayMin;
+      timeoutId = setTimeout(sendNext, delay);
+    };
+
+    // Inicia após 1 segundo (igual ao original)
+    timeoutId = setTimeout(sendNext, 1000);
   };
 
   window.parar = () => {
     running = false;
-    if (intervalo) clearInterval(intervalo);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
     console.log(
       "%c⛔ Script parado manualmente",
       "color: red; font-weight: bold",
@@ -152,5 +178,5 @@
   };
 
   console.log("Iniciando em 1 segundo...");
-  setTimeout(iniciarEnvio, 1000);
+  startSpam();
 })();
