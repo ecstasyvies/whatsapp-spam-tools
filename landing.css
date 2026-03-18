@@ -1,8 +1,10 @@
 :root {
   --primaria: #00e676;
   --primaria-escura: #00c853;
-  --secundaria: #7c4dff; /* Roxo para tom lúdico */
-  --acentuado: #00bcd4; /* Ciano para contraste amigável */
+  --secundaria: #7c4dff;
+  /* Roxo para tom lúdico */
+  --acentuado: #00bcd4;
+  /* Ciano para contraste amigável */
   --fundo-base: #0f1715;
   --fundo-gradiente: radial-gradient(circle at top right, #1a2a24 0%, #0f1715 100%);
   --fundo-card: rgba(255, 255, 255, 0.04);
@@ -248,9 +250,17 @@ h5,
   border-radius: 50%;
 }
 
-.ponto.red { background: #ff5f56; }
-.ponto.yellow { background: #ffbd2e; }
-.ponto.green { background: #27c93f; }
+.ponto.red {
+  background: #ff5f56;
+}
+
+.ponto.yellow {
+  background: #ffbd2e;
+}
+
+.ponto.green {
+  background: #27c93f;
+}
 
 .cursor-terminal {
   display: inline-block;
@@ -263,8 +273,15 @@ h5,
 }
 
 @keyframes piscar {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }
 
 .secao-modulos {
