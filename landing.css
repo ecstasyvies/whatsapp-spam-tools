@@ -446,39 +446,95 @@ h5,
 }
 
 .caixa-seguranca {
-  background: rgba(255, 152, 0, 0.05);
-  border: 1px solid rgba(255, 152, 0, 0.2);
-  padding: 3rem;
-  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(127, 29, 29, 0.4) 0%, rgba(127, 29, 29, 0.1) 100%);
+  border: 2px solid #ef4444;
+  border-radius: 2rem;
+  padding: 3.5rem;
   margin-top: 8rem;
-  text-align: center;
-  backdrop-filter: var(--efeito-blur);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(16px);
+  text-align: left;
+}
+
+.caixa-seguranca::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #ef4444, #f97316);
 }
 
 .caixa-seguranca h4 {
-  color: var(--alerta);
-  font-size: 1.4rem;
-  margin-bottom: 1rem;
+  color: #f87171;
+  font-weight: 800;
+  font-size: 1.6rem;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
+}
+
+.caixa-seguranca p {
+  color: #fca5a5;
+  font-size: 1.1rem;
+}
+
+.caixa-seguranca strong {
+  color: #fb923c;
+}
+
+.caixa-seguranca .link-readme {
+  color: #fb923c;
+  border-color: rgba(251, 146, 60, 0.5);
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 1px dashed #fb923c;
+  transition: all 0.3s;
+}
+
+.caixa-seguranca .link-readme:hover {
+  background: rgba(251, 146, 60, 0.1);
+  color: #fff;
+  border-color: #fff;
+}
+
+.caixa-seguranca .alerta-reforco {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  margin-top: 2rem;
+  text-align: left;
+}
+
+.caixa-seguranca .alerta-reforco h5 {
+  color: #f87171;
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+  margin-top: 0;
+}
+
+.caixa-seguranca .alerta-reforco p {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+.caixa-seguranca .alerta-reforco .vencimento-alerta {
+  display: block;
+  margin-top: 1rem;
+  font-weight: 700;
+  color: #f87171;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .info-adicional {
   padding: 6rem 0;
   text-align: center;
-}
-
-.link-readme {
-  color: var(--primaria);
-  text-decoration: none;
-  font-weight: 600;
-  border-bottom: 1px dashed var(--primaria);
-  transition: all 0.3s;
-}
-
-.link-readme:hover {
-  color: #fff;
-  border-color: #fff;
 }
 
 .rodape-site {
@@ -609,9 +665,29 @@ h5,
 
   .moldura-codigo-preview {
     padding: 1.25rem;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     max-width: calc(100vw - 2.5rem);
-    overflow-x: auto;
+    overflow-x: hidden;
+  }
+
+  .moldura-codigo-preview pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin-bottom: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .moldura-codigo-preview pre i {
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+  }
+
+  .caixa-seguranca {
+    padding: 2rem;
+    margin-top: 4rem;
+    border-radius: 1.5rem;
   }
 }
 
