@@ -1,6 +1,8 @@
 "use strict";
 
 (() => {
+  const VERSAO = "2.0.0";
+
   const CONFIG = {
     mensagens: [
       "Primeira linha do seu roteiro ou texto personalizado",
@@ -13,10 +15,57 @@
     modoSeguro: true,
   };
 
+  const SELETORES = {
+    chatPrincipal: "#main",
+    chatAlternativo: '[data-testid="chat"]',
+    campoTexto: 'div[contenteditable="true"][role="textbox"]',
+    campoTextoFallback: 'div[contenteditable="true"]',
+    botaoEnviar: '[data-testid="send"]',
+    botaoEnviarPt: 'button[aria-label="Enviar"]',
+    botaoEnviarEn: 'button[aria-label="Send"]',
+    botaoEnviarIcone: 'button span[data-icon="send"]',
+    cabecalhoChat: "#main header",
+  };
+
+  const verificarCompatibilidade = () => {
+    const urlAtual = window.location.hostname;
+    if (!urlAtual.includes("web.whatsapp.com")) return false;
+
+    const chatPrincipal =
+      document.querySelector(SELETORES.chatPrincipal) ||
+      document.querySelector(SELETORES.chatAlternativo);
+    if (!chatPrincipal) return false;
+
+    const cabecalho = document.querySelector(SELETORES.cabecalhoChat);
+    if (!cabecalho) return false;
+
+    const campo = chatPrincipal.querySelector(SELETORES.campoTexto);
+    if (!campo) return false;
+
+    return true;
+  };
+
+  const encerrarPorIncompatibilidade = (motivo) => {
+    running = false;
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+    console.error(
+      "%c⛔ INTERFACE NÃO RECONHECIDA",
+      "color: #ff4444; font-weight: bold; font-size: 15px;"
+    );
+    console.error(`%c${motivo}`, "color: #ff8800; font-weight: bold;");
+    console.error(
+      "%cO WhatsApp Web pode ter atualizado sua interface. Não tente novamente — atualize o script em: https://github.com/ecstasyvies/whatsapp-spam-tools",
+      "color: #ffcc00;"
+    );
+  };
+
   if (!CONFIG.mensagens || CONFIG.mensagens.length === 0) {
     console.error(
-      "%c❌ Array de mensagens está vazio",
-      "color: red; font-weight: bold",
+      "%c❌ A lista de mensagens está vazia. Adicione pelo menos uma mensagem no CONFIG.mensagens antes de executar.",
+      "color: red; font-weight: bold"
     );
     return;
   }
@@ -24,65 +73,68 @@
   let enviadas = 0;
   let running = true;
   let timeoutId = null;
-  let totalMensagens = CONFIG.mensagens.length;
+  const totalMensagens = CONFIG.mensagens.length;
 
   console.log(
-    "%c🚀 Script de Texto carregado!",
-    "color: #00ff00; font-weight: bold",
+    `%c🚀 SpamText v${VERSAO} carregado!`,
+    "color: #00ff00; font-weight: bold"
   );
-  console.log(`📋 Total de mensagens: ${totalMensagens}`);
-  console.log("Pra parar a qualquer momento: digite   parar()");
+  console.log(`📋 Mensagens na fila: ${totalMensagens}`);
 
-  // Captura o chat alvo na inicialização
-  const header = document.querySelector("#main header");
-  const targetChat = header ? header.innerText.split("\n")[0] : null;
+  if (!verificarCompatibilidade()) {
+    encerrarPorIncompatibilidade(
+      "A página atual não é o WhatsApp Web ou os elementos essenciais (conversa aberta, campo de texto) não foram encontrados."
+    );
+    return;
+  }
+
+  const cabecalhoInicial = document.querySelector(SELETORES.cabecalhoChat);
+  const targetChat = cabecalhoInicial ? cabecalhoInicial.innerText.split("\n")[0] : null;
+
+  console.log("✅ Interface reconhecida. Iniciando em 1 segundo...");
+  console.log("🎮 Para parar a qualquer momento, digite: parar()");
 
   const localizarElementos = () => {
     const chat =
-      document.querySelector("#main") ||
-      document.querySelector('[data-testid="chat"]');
-    if (!chat) throw new Error("Nenhuma conversa aberta");
+      document.querySelector(SELETORES.chatPrincipal) ||
+      document.querySelector(SELETORES.chatAlternativo);
+
+    if (!chat) {
+      throw new Error("INCOMPATIBILIDADE: contêiner principal da conversa não encontrado");
+    }
 
     const campo =
-      chat.querySelector('div[contenteditable="true"][role="textbox"]') ||
-      chat.querySelector('div[contenteditable="true"]');
+      chat.querySelector(SELETORES.campoTexto) ||
+      chat.querySelector(SELETORES.campoTextoFallback);
 
     const botao =
-      chat.querySelector('[data-testid="send"]') ||
-      chat.querySelector('button[aria-label="Enviar"]') ||
-      chat.querySelector('button[aria-label="Send"]') ||
-      chat.querySelector('button span[data-icon="send"]')?.closest("button");
+      chat.querySelector(SELETORES.botaoEnviar) ||
+      chat.querySelector(SELETORES.botaoEnviarPt) ||
+      chat.querySelector(SELETORES.botaoEnviarEn) ||
+      chat.querySelector(SELETORES.botaoEnviarIcone)?.closest("button");
 
-    return { campo, botao };
+    return { chat, campo, botao };
   };
 
   const inserirTexto = (campo, texto) => {
     campo.focus();
-
-    // Limpa o conteúdo existente
     document.execCommand("selectAll", false, null);
     document.execCommand("delete", false, null);
-
-    // Insere o texto de forma que o React detecte
     document.execCommand("insertText", false, texto);
-
-    // Eventos que o WhatsApp espera
-    campo.dispatchEvent(
-      new InputEvent("input", { bubbles: true, composed: true }),
-    );
-    campo.dispatchEvent(
-      new InputEvent("compositionend", { bubbles: true, composed: true }),
-    );
+    campo.dispatchEvent(new InputEvent("input", { bubbles: true, composed: true }));
+    campo.dispatchEvent(new InputEvent("compositionend", { bubbles: true, composed: true }));
     campo.dispatchEvent(new Event("input", { bubbles: true }));
     campo.dispatchEvent(new Event("change", { bubbles: true }));
   };
 
   const enviarMensagemComRetry = async (texto, tentativa = 1) => {
     const { campo, botao } = localizarElementos();
-    if (!campo) throw new Error("Campo de texto não encontrado");
+
+    if (!campo) {
+      throw new Error("INCOMPATIBILIDADE: campo de texto não encontrado");
+    }
 
     inserirTexto(campo, texto);
-
     await new Promise((r) => setTimeout(r, 220));
 
     if (botao && botao.offsetParent !== null && !botao.disabled) {
@@ -110,31 +162,27 @@
       return enviarMensagemComRetry(texto, tentativa + 1);
     }
 
-    throw new Error("Não conseguiu enviar após várias tentativas");
+    throw new Error("Botão de envio não disponível após várias tentativas");
   };
 
   const startSpam = () => {
     const sendNext = async () => {
-      if (!running || enviadas >= totalMensagens) {
-        console.log(
-          "%c✅ Envio concluído com sucesso",
-          "color: lime; font-weight: bold",
-        );
+      if (!running) return;
+
+      if (enviadas >= totalMensagens) {
+        console.log("%c✅ Todas as mensagens foram enviadas!", "color: lime; font-weight: bold");
         console.log(`Total enviado: ${enviadas}/${totalMensagens}`);
         return;
       }
 
-      // Validação de Segurança pra Texto
-      const currentHeader = document.querySelector("#main header");
-      const currentChat = currentHeader
-        ? currentHeader.innerText.split("\n")[0]
-        : null;
+      const cabecalhoAtual = document.querySelector(SELETORES.cabecalhoChat);
+      const chatAtual = cabecalhoAtual ? cabecalhoAtual.innerText.split("\n")[0] : null;
 
-      if (targetChat && currentChat !== targetChat) {
+      if (targetChat && chatAtual !== targetChat) {
         window.parar();
         console.error(
-          "%c🛡️ SEGURANÇA: Você trocou de chat! Script interrompido por segurança.",
-          "color: orange; font-weight: bold; font-size: 14px;",
+          "%c🛡️ SEGURANÇA: Conversa alterada — script interrompido para evitar envio no local errado.",
+          "color: orange; font-weight: bold; font-size: 14px;"
         );
         return;
       }
@@ -146,22 +194,26 @@
         enviadas++;
         const progresso = Math.round((enviadas / totalMensagens) * 100);
         console.log(
-          `📤 [${enviadas}/${totalMensagens}] ${progresso}%  ${msg.substring(0, 60)}${msg.length > 60 ? "..." : ""}`,
+          `📤 [${enviadas}/${totalMensagens}] ${progresso}% — ${msg.substring(0, 60)}${msg.length > 60 ? "..." : ""}`
         );
       } catch (e) {
-        console.error(`❌ Erro na mensagem ${enviadas + 1}: ${e.message}`);
+        if (e.message.startsWith("INCOMPATIBILIDADE:")) {
+          encerrarPorIncompatibilidade(
+            `Elemento essencial desapareceu durante a execução: ${e.message.replace("INCOMPATIBILIDADE: ", "")}`
+          );
+          return;
+        }
+        console.error(`❌ Erro ao enviar mensagem ${enviadas + 1}: ${e.message}`);
         running = false;
         return;
       }
 
-      // Delay ALEATÓRIO a cada mensagem
       const delay =
         Math.floor(Math.random() * (CONFIG.delayMax - CONFIG.delayMin + 1)) +
         CONFIG.delayMin;
       timeoutId = setTimeout(sendNext, delay);
     };
 
-    // Inicia após 1 segundo (igual ao original)
     timeoutId = setTimeout(sendNext, 1000);
   };
 
@@ -171,12 +223,8 @@
       clearTimeout(timeoutId);
       timeoutId = null;
     }
-    console.log(
-      "%c⛔ Script parado manualmente",
-      "color: red; font-weight: bold",
-    );
+    console.log("%c⛔ Script parado.", "color: red; font-weight: bold");
   };
 
-  console.log("Iniciando em 1 segundo...");
   startSpam();
 })();
